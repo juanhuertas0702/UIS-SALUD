@@ -321,7 +321,7 @@
                 try {
                 // fetch using session cookie but explicitly request by cedula to avoid session leakage
                 const cedula = localStorage.getItem('user_cedula');
-                const res = await fetch(`${API_BASE}/appointments/?cedula=${encodeURIComponent(cedula || '')}`, { credentials: 'include' });
+                const res = await fetch(`${API_BASE}/appointments/?cedula=${encodeURIComponent(cedula || '')}`, {});
                 const json = await res.json();
                 const list = json.success ? json.appointments || [] : [];
                 cachedAppointments = list;
@@ -429,8 +429,7 @@
             const id = e.currentTarget.getAttribute('data-id');
             if(!confirm('¿Cancelar esta cita?')) return;
             try{
-                const params = new URLSearchParams(); params.append('id', id);
-                const res = await fetch(`${API_BASE}/appointments/cancel/`, { method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded'}, body: params.toString(), credentials: 'include' });
+                const res = await fetch(`${API_BASE}/appointments/cancel/`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id}), credentials: 'include' });
                 const json = await res.json();
                 alert(json.message || 'Operación completada');
                 if(json.success){
@@ -618,12 +617,9 @@
                 const appointmentId = document.getElementById('appointment-id').value;
                 if(appointmentId){
                     // modificar cita existente
-                    const params = new URLSearchParams();
-                    params.append('appointment_id', appointmentId);
-                    params.append('fecha', data.fecha);
-                    params.append('hora', data.hora);
+                    const jsonData = {appointment_id: appointmentId, fecha: data.fecha, hora: data.hora};
                     try{
-                        const res = await fetch(`${API_BASE}/appointments/modify/`, { method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded'}, body: params.toString(), credentials: 'include' });
+                        const res = await fetch(`${API_BASE}/appointments/modify/`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(jsonData), credentials: 'include' });
                         const json = await parseResponse(res);
                         alert(json.message || 'Cita actualizada');
                         if(json.success){
@@ -636,13 +632,9 @@
                         }
                     }catch(err){ console.error(err); alert('Error al actualizar cita'); }
                 } else {
-                    const params = new URLSearchParams();
-                    params.append('cedula', cedula);
-                    params.append('especialidad', data.especialidad);
-                    params.append('fecha', data.fecha);
-                    params.append('hora', data.hora);
+                    const jsonData = {cedula, especialidad: data.especialidad, fecha: data.fecha, hora: data.hora};
                     try{
-                        const res = await fetch(`${API_BASE}/appointments/`, { method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded'}, body: params.toString(), credentials: 'include' });
+                        const res = await fetch(`${API_BASE}/appointments/`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(jsonData), credentials: 'include' });
                         const json = await parseResponse(res);
                         alert(json.message || 'Cita creada');
                         if(json.success){

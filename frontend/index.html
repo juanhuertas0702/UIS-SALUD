@@ -368,13 +368,13 @@
                 formLogin.addEventListener('submit', (e) => {
                     e.preventDefault();
                     const formData = new FormData(formLogin);
-                    const params = new URLSearchParams();
-                    for(const pair of formData.entries()){ params.append(pair[0], pair[1]); }
+                    const jsonData = Object.fromEntries(formData.entries());
 
                     fetch(API_BASE + '/login/', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: params.toString(),
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(jsonData),
+                        credentials: 'include',
                     })
                     .then(r => r.json())
                     .then(json => {
@@ -428,14 +428,13 @@
                         return;
                     }
                     
-                    const params = new URLSearchParams();
-                    for(const pair of formData.entries()){ params.append(pair[0], pair[1]); }
+                    const jsonData = Object.fromEntries(formData.entries());
 
                     fetch(API_BASE + '/register/', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: params.toString(),
-                        
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(jsonData),
+                        credentials: 'include',
                     })
                     .then(r => r.json())
                     .then(json => {
