@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - UIS Salud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="estilos/global.css">
+    <link rel="stylesheet" href="estilos/animations.css">
+    <link rel="stylesheet" href="estilos/navbar.css">
+    <link rel="stylesheet" href="estilos/buttons.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Barra de Navegación -->
+    <nav class="bg-white shadow-md fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-2">
+                    <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span class="text-2xl font-bold text-gray-800">UIS <span class="text-green-600">Salud</span></span>
+                </div>
+                
+                <!-- Botón de Cerrar Sesión -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <button id="logout-btn" class="text-green-600 hover:text-green-700 font-semibold px-4 py-2 rounded-lg transition duration-200">
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Espaciador para nav fijo -->
+    <div class="h-16"></div>
+
+    <!-- Perfil rápido -->
+    <div class="max-w-4xl mx-auto px-4 mt-6">
+        <div class="bg-white rounded-lg shadow-sm p-4 mb-6 flex items-center justify-between">
+            <div>
+                <div class="text-sm text-gray-500">Perfil</div>
+                <div class="text-lg font-semibold" id="profile-fullname">Usuario</div>
+                <div class="text-sm text-gray-600" id="profile-cedula">Cédula: -</div>
+            </div>
+            <div class="text-right">
+                <div class="text-sm text-gray-600" id="profile-correo">-</div>
+                <div class="text-sm text-gray-600" id="profile-eps">EPS: -</div>
+                <div class="text-sm text-gray-600" id="profile-tipo-sangre">Tipo sangre: -</div>
+                <div class="mt-3">
+                    <button id="historial-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Histórico de citas</button>
+                </div>
+            </div>
+        </div>
+
+                <!-- Modal: Histórico de Citas -->
+                <div id="modal-historico" class="fixed inset-0 hidden items-center justify-center z-50">
+                    <div class="absolute inset-0 bg-black/50" data-close-historico></div>
+                    <div class="relative bg-white rounded-lg shadow-lg w-full max-w-2xl p-6 z-10">
+                        <button data-close-historico class="absolute top-3 right-3 text-gray-500 text-2xl leading-none">&times;</button>
+                        <div class="flex items-start justify-between mb-4">
+                            <h2 class="text-xl font-bold">HISTÓRICO DE CITAS</h2>
+                            <div class="flex items-center gap-3">
+                                <button id="export-pdf" class="px-3 py-2 bg-gray-100 rounded text-sm">Exportar PDF</button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-6 mb-4">
+                            <div class="col-span-2">
+                                <canvas id="hist-pie" width="360" height="220"></canvas>
+                                <div class="text-sm text-gray-500 mt-2">Distribución total de citas</div>
+                            </div>
+                            <div>
+                                <div class="mb-3 text-sm text-gray-500">Resumen de Actividad</div>
+                                <div id="resumen-activ" class="space-y-3">
+                                    <!-- stats -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h3 class="text-sm font-semibold text-gray-700 mb-2">INFO DE LA CITA</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="text-sm text-gray-500">
+                                            <th class="p-2">FECHA</th>
+                                            <th class="p-2">ESPECIALIDAD</th>
+                                            <th class="p-2">DOCTOR</th>
+                                            <th class="p-2">ESTADO</th>
+                                            <th class="p-2">ACCIONES</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historico-table" class="text-sm text-gray-700">
+                                        <!-- filas dinámicas -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div id="historico-count" class="text-sm text-gray-500">Mostrando 0 resultados</div>
+                            <div class="flex gap-2">
+                                <button id="hist-prev" class="px-3 py-1 rounded border">&lt;</button>
+                                <button id="hist-next" class="px-3 py-1 rounded border">&gt;</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    </div>
+
+    <!-- Sección Principal -->
+    <section class="py-16 bg-gray-50">
+        <div class="max-w-4xl mx-auto px-4">
+            <!-- Calendario Semanal -->
+            <div class="bg-white rounded-lg shadow-md p-8">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <h2 class="text-2xl font-bold text-gray-900">CALENDARIO SEMANAL</h2>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="prev-week" class="text-gray-600 hover:text-green-600 transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                        <span id="week-range" class="text-gray-700 font-semibold min-w-[150px] text-center">Feb. 16 - Feb 22</span>
+                        <button id="next-week" class="text-gray-600 hover:text-green-600 transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Grid de Días de la Semana -->
+                <div class="grid grid-cols-7 gap-4 mb-8">
+                    <div class="text-center text-sm font-semibold text-gray-600 py-2">L</div>
+                    <div class="text-center text-sm font-semibold text-gray-600 py-2">M</div>
+                    <div class="text-center text-sm font-semibold text-gray-600 py-2">X</div>
+                    <div class="text-center text-sm font-semibold text-gray-600 py-2">J</div>
+                    <div class="text-center text-sm font-semibold text-gray-600 py-2">V</div>
+                    <div class="text-center text-sm font-semibold text-gray-600 py-2">S</div>
+                    <div class="text-center text-sm font-semibold text-gray-600 py-2">D</div>
+                </div>
+
+                <!-- Días del Calendario -->
+                <div class="grid grid-cols-7 gap-4 mb-8">
+                    <button data-day="16" class="calendar-day aspect-square rounded-lg border-2 border-gray-200 flex flex-col items-center justify-center hover:border-green-400 transition cursor-pointer">
+                        <div class="text-lg font-bold text-gray-900">16</div>
+                    </button>
+                    <button data-day="17" class="calendar-day aspect-square rounded-lg border-4 border-green-400 bg-green-50 flex flex-col items-center justify-center hover:border-green-600 transition cursor-pointer">
+                        <div class="text-lg font-bold text-green-600">17</div>
+                        <div class="text-xs text-green-600 font-semibold">Med. Gen</div>
+                    </button>
+                    <button data-day="18" class="calendar-day aspect-square rounded-lg border-2 border-gray-200 flex flex-col items-center justify-center hover:border-green-400 transition cursor-pointer">
+                        <div class="text-lg font-bold text-gray-900">18</div>
+                    </button>
+                    <button data-day="19" class="calendar-day aspect-square rounded-lg border-2 border-gray-200 flex flex-col items-center justify-center hover:border-green-400 transition cursor-pointer">
+                        <div class="text-lg font-bold text-gray-900">19</div>
+                    </button>
+                    <button data-day="20" class="calendar-day aspect-square rounded-lg border-2 border-gray-200 flex flex-col items-center justify-center hover:border-green-400 transition cursor-pointer">
+                        <div class="text-lg font-bold text-gray-900">20</div>
+                    </button>
+                    <button data-day="21" class="calendar-day aspect-square rounded-lg border-2 border-gray-200 flex flex-col items-center justify-center hover:border-green-400 transition cursor-pointer">
+                        <div class="text-lg font-bold text-gray-400">21</div>
+                    </button>
+                    <button data-day="22" class="calendar-day aspect-square rounded-lg border-2 border-gray-200 flex flex-col items-center justify-center hover:border-green-400 transition cursor-pointer">
+                        <div class="text-lg font-bold text-gray-400">22</div>
+                    </button>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button id="agendar-btn" class="btn-primary text-white font-semibold px-8 py-3 rounded-lg text-lg flex items-center justify-center space-x-2 hover:shadow-lg transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>AGENDAR CITA</span>
+                    </button>
+                    <button id="citas-btn" class="border-2 border-green-600 text-green-600 font-semibold px-8 py-3 rounded-lg text-lg flex items-center justify-center space-x-2 hover:bg-green-50 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        <span>CITAS PROGRAMADAS</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal: Agendar Cita -->
+    <div id="modal-agendar" class="fixed inset-0 hidden items-center justify-center z-50">
+        <div class="absolute inset-0 bg-black/50" data-close-modal></div>
+        <div class="relative bg-white rounded-lg shadow-lg w-full max-w-md p-6 z-10">
+            <button data-close-modal class="absolute top-3 right-3 text-gray-500 text-2xl leading-none">&times;</button>
+            
+            <div class="flex items-center space-x-2 mb-6">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <h2 class="text-xl font-bold text-gray-900">AGENDAR CITA</h2>
+            </div>
+
+            <form id="form-agendar" class="space-y-4">
+                <!-- Especialidad -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">ESPECIALIDAD</label>
+                    <select name="especialidad" required class="w-full border-2 border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-green-500">
+                        <option value="medicina-general">Medicina General</option>
+                        <option value="odontologia">Odontología</option>
+                        <option value="cardiologia">Cardiología</option>
+                        <option value="dermatologia">Dermatología</option>
+                        <option value="oftalmologia">Oftalmología</option>
+                    </select>
+                </div>
+
+                <!-- Fecha -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Fecha</label>
+                    <input name="fecha" type="date" required class="w-full border-2 border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-green-500">
+                </div>
+
+                <!-- Hora -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">Hora</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Mañana -->
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 mb-2">MAÑANA</div>
+                            <div class="space-y-2">
+                                <button type="button" class="hora-btn w-full py-2 px-3 border-2 border-gray-300 rounded hover:border-green-400 text-sm transition" data-time="8:10 am">8:10 am</button>
+                                <button type="button" class="hora-btn w-full py-2 px-3 border-4 border-green-600 bg-green-50 rounded text-sm font-semibold text-green-600 transition" data-time="9:20 am">9:20 am</button>
+                                <button type="button" class="hora-btn w-full py-2 px-3 border-2 border-gray-300 rounded hover:border-green-400 text-sm transition" data-time="10:30 am">10:30 am</button>
+                            </div>
+                        </div>
+
+                        <!-- Tarde -->
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 mb-2">TARDE</div>
+                            <div class="space-y-2">
+                                <button type="button" class="hora-btn w-full py-2 px-3 border-2 border-gray-300 rounded hover:border-green-400 text-sm transition" data-time="2:00 pm">2:00 pm</button>
+                                <button type="button" class="hora-btn w-full py-2 px-3 border-2 border-gray-300 rounded hover:border-green-400 text-sm transition" data-time="3:20 pm">3:20 pm</button>
+                                <button type="button" class="hora-btn w-full py-2 px-3 border-2 border-gray-300 rounded hover:border-green-400 text-sm transition" data-time="3:50 pm">3:50 pm</button>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="hora" id="hora-select">
+                    <input type="hidden" name="appointment_id" id="appointment-id">
+                </div>
+
+                <!-- Botones -->
+                <div class="flex justify-between items-center pt-4">
+                    <button type="button" data-close-modal class="px-6 py-2 rounded border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition">Cancelar</button>
+                    <button type="submit" class="px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition flex items-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>CONFIRMAR</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Citas Programadas -->
+    <div id="modal-citas" class="fixed inset-0 hidden items-center justify-center z-50">
+        <div class="absolute inset-0 bg-black/50" data-close-modal></div>
+        <div class="relative bg-white rounded-lg shadow-lg w-full max-w-lg p-6 z-10">
+            <button data-close-modal class="absolute top-3 right-3 text-gray-500 text-2xl leading-none">&times;</button>
+            <h2 class="text-2xl font-semibold mb-2">Citas Programadas</h2>
+            <p class="text-sm text-gray-500 mb-6">Panel de gestión de consultas próximas</p>
+
+            <div id="appointments-list" class="space-y-4">
+                <!-- Items dinámicos -->
+            </div>
+
+            <div class="flex items-center justify-between mt-6">
+                <button data-close-modal class="px-4 py-2 rounded border hover:bg-gray-100">Cerrar</button>
+                <button id="nueva-cita-btn" class="px-4 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700">+ Nueva Cita</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Rellenar perfil rápido
+        const fullname = `${localStorage.getItem('user_nombre') || ''} ${localStorage.getItem('user_apellidos') || ''}`.trim();
+        document.getElementById('profile-fullname').textContent = fullname || 'Usuario';
+        document.getElementById('profile-cedula').textContent = 'Cédula: ' + (localStorage.getItem('user_cedula') || '-');
+        document.getElementById('profile-correo').textContent = localStorage.getItem('user_correo') || '-';
+        document.getElementById('profile-eps').textContent = 'EPS: ' + (localStorage.getItem('user_eps') || '-');
+        document.getElementById('profile-tipo-sangre').textContent = 'Tipo sangre: ' + (localStorage.getItem('user_tipo_sangre') || '-');
+
+        // Cerrar sesión (llama al backend para destruir la sesión)
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try{
+                await fetch(`${API_BASE}/logout/`, { method: 'POST', credentials: 'include' });
+            }catch(e){ console.error('Error logout', e); }
+            localStorage.clear();
+            window.location.href = 'index.html';
+        });
+
+        const API_BASE = 'http://127.0.0.1:8000/api';
+
+        // Modal handlers
+        const modalAgendar = document.getElementById('modal-agendar');
+        const modalCitas = document.getElementById('modal-citas');
+        const agendarBtn = document.getElementById('agendar-btn');
+        const citasBtn = document.getElementById('citas-btn');
+
+        function showModal(modal){ modal.classList.remove('hidden'); modal.classList.add('flex'); document.body.style.overflow = 'hidden'; }
+        function hideModal(modal){ modal.classList.add('hidden'); modal.classList.remove('flex'); document.body.style.overflow = ''; }
+
+        agendarBtn.addEventListener('click', () => showModal(modalAgendar));
+        citasBtn.addEventListener('click', async () => {
+            const cedula = localStorage.getItem('user_cedula');
+                try {
+                // fetch using session cookie but explicitly request by cedula to avoid session leakage
+                const cedula = localStorage.getItem('user_cedula');
+                const res = await fetch(`${API_BASE}/appointments/?cedula=${encodeURIComponent(cedula || '')}`, { credentials: 'include' });
+                const json = await res.json();
+                const list = json.success ? json.appointments || [] : [];
+                cachedAppointments = list;
+                renderAppointments(cachedAppointments);
+                renderCalendarAppointments(cachedAppointments);
+            } catch(err){
+                console.error(err);
+                document.getElementById('appointments-list').innerHTML = `<p class="text-gray-600">Error de red al cargar citas.</p>`;
+            }
+            showModal(modalCitas);
+        });
+
+        document.querySelectorAll('[data-close-modal]').forEach(el => {
+            el.addEventListener('click', () => {
+                hideModal(modalAgendar);
+                hideModal(modalCitas);
+            });
+        });
+
+        // Renderizar lista de citas
+        const SPECIALITY_LABELS = {
+            'medicina-general': 'Med. Gen',
+            'odontologia': 'Odontología',
+            'cardiologia': 'Cardiología',
+            'dermatologia': 'Dermatología',
+            'oftalmologia': 'Oftalmología'
+        };
+
+        function getSpecialityLabel(key){
+            if(!key) return '';
+            return SPECIALITY_LABELS[key] || key;
+        }
+
+        function renderAppointments(list){
+            const container = document.getElementById('appointments-list');
+            // Filtrar solo citas NO canceladas para el modal de programadas
+            const activeAppointments = (list || []).filter(a => a.status !== 'cancelada');
+            if(!activeAppointments || activeAppointments.length === 0){
+                container.innerHTML = `<p class="text-gray-600">No tienes citas programadas aún...</p>`;
+                return;
+            }
+
+            container.innerHTML = activeAppointments.map(a => `
+                <div class="flex items-center justify-between p-4 rounded-lg border">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-900">${escapeHtml(getSpecialityLabel(a.especialidad))}</div>
+                            <div class="text-sm text-gray-500">${escapeHtml(a.paciente)}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                            <div class="text-sm font-medium text-gray-900">${escapeHtml(a.fecha)}</div>
+                        <div class="text-sm text-gray-500 mb-2">${escapeHtml(a.hora)}</div>
+                        <div class="flex gap-2 justify-end">
+                            <button data-id="${a.id}" class="posponer-btn px-3 py-1 rounded bg-yellow-100 text-yellow-700">Posponer</button>
+                            <button data-id="${a.id}" class="cancel-btn px-3 py-1 rounded bg-red-100 text-red-700">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // attach handlers
+            container.querySelectorAll('.cancel-btn').forEach(b => b.addEventListener('click', cancelAppointment));
+            container.querySelectorAll('.posponer-btn').forEach(b => b.addEventListener('click', (e) => {
+                const id = e.currentTarget.getAttribute('data-id');
+                openPosponer(id);
+            }));
+        }
+
+        // Mostrar títulos en el calendario (pills)
+        let cachedAppointments = [];
+        function renderCalendarAppointments(list){
+            cachedAppointments = list || [];
+            // limpiar pills previas
+            document.querySelectorAll('.calendar-day').forEach(btn => {
+                const existing = btn.querySelector('.appt-pill');
+                if(existing) existing.remove();
+            });
+
+            // Filtrar solo citas NO canceladas para mostrar pills
+            const activeCitas = (list || []).filter(a => a.status !== 'cancelada');
+            activeCitas.forEach(a => {
+                const dayBtn = document.querySelector(`.calendar-day[data-day="${a.fecha_iso}"]`);
+                if(dayBtn){
+                    const pill = document.createElement('div');
+                    pill.className = 'appt-pill mt-2 bg-green-50 text-green-600 rounded-full px-3 py-1 text-xs font-semibold';
+                    const label = getSpecialityLabel(a.especialidad);
+                    pill.textContent = label.length > 12 ? label.slice(0,12) + '...' : label;
+                    dayBtn.appendChild(pill);
+                }
+            });
+        }
+
+        function escapeHtml(str){
+            if(!str) return '';
+            return String(str).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[m]; });
+        }
+
+        async function cancelAppointment(e){
+            const id = e.currentTarget.getAttribute('data-id');
+            if(!confirm('¿Cancelar esta cita?')) return;
+            try{
+                const params = new URLSearchParams(); params.append('id', id);
+                const res = await fetch(`${API_BASE}/appointments/cancel/`, { method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded'}, body: params.toString(), credentials: 'include' });
+                const json = await res.json();
+                alert(json.message || 'Operación completada');
+                if(json.success){
+                    // refrescar calendario y lista sin recargar la página
+                    await loadUserAppointments();
+                    const cedula = localStorage.getItem('user_cedula');
+                    if(!cedula) return;
+                    const list = await fetchUserAppointments(cedula);
+                    cachedAppointments = list;
+                    // refrescar pills del calendario
+                    renderCalendarAppointments(cachedAppointments);
+                    // si el modal de citas está abierto, refrescar su contenido
+                    if(!modalCitas.classList.contains('hidden')){
+                        renderAppointments(cachedAppointments);
+                    }
+                }
+            }catch(err){ console.error(err); alert('Error cancelando cita'); }
+        }
+
+        // Abrir modal de posponer y rellenar formulario
+        function openPosponer(id){
+            const appt = cachedAppointments.find(x => String(x.id) === String(id));
+            if(!appt){ alert('Cita no encontrada'); return; }
+            // rellenar formulario
+            const select = document.querySelector('select[name="especialidad"]');
+            if(select) select.value = appt.especialidad;
+            if(fechaInput) fechaInput.value = appt.fecha_iso;
+            // seleccionar hora visualmente
+            const matchingBtn = Array.from(horaButtons).find(b => b.getAttribute('data-time') === appt.hora);
+            if(matchingBtn) matchingBtn.click();
+            // establecer id
+            document.getElementById('appointment-id').value = appt.id;
+            // abrir modal agendar
+            hideModal(modalCitas);
+            showModal(modalAgendar);
+        }
+
+        // Calendario dinámico
+        const today = new Date(2026, 1, 11); // 11 de febrero 2026, miércoles
+        let currentWeekStart = new Date(today);
+        currentWeekStart.setDate(today.getDate() - today.getDay() + 1); // Lunes de esta semana
+
+        function formatDateLocal(d){
+            const y = d.getFullYear();
+            const m = String(d.getMonth()+1).padStart(2,'0');
+            const day = String(d.getDate()).padStart(2,'0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function getMonday(date) {
+            const day = date.getDay();
+            return new Date(date.getTime() - (day === 0 ? 6 : day - 1) * 24 * 60 * 60 * 1000);
+        }
+
+        function canGoBack() {
+            const mondayOfToday = getMonday(today);
+            return currentWeekStart.getTime() > mondayOfToday.getTime();
+        }
+
+        function updateCalendarDisplay() {
+            const weekDays = [];
+            for(let i = 0; i < 7; i++) {
+                const date = new Date(currentWeekStart);
+                date.setDate(currentWeekStart.getDate() + i);
+                weekDays.push(date);
+            }
+
+            const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            const startMonth = monthNames[weekDays[0].getMonth()];
+            const endMonth = monthNames[weekDays[6].getMonth()];
+            const startDay = weekDays[0].getDate();
+            const endDay = weekDays[6].getDate();
+
+            document.getElementById('week-range').textContent = `${startMonth}. ${startDay} - ${endMonth} ${endDay}`;
+
+            const dayButtons = document.querySelectorAll('.calendar-day');
+            dayButtons.forEach((btn, i) => {
+                const date = weekDays[i];
+                const dayNum = date.getDate();
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                const isToday = date.toDateString() === today.toDateString();
+
+                btn.setAttribute('data-day', formatDateLocal(date));
+                btn.innerHTML = `<div class="text-lg font-bold ${isToday ? 'text-green-600' : 'text-gray-900'}">${dayNum}</div>`;
+                btn.disabled = false;
+                btn.style.cursor = 'pointer';
+            });
+
+            const prevBtn = document.getElementById('prev-week');
+            prevBtn.style.pointerEvents = canGoBack() ? 'auto' : 'none';
+            prevBtn.style.opacity = canGoBack() ? '1' : '0.5';
+        }
+
+        document.getElementById('prev-week').addEventListener('click', () => {
+            if(canGoBack()) {
+                currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+                updateCalendarDisplay();
+                // Re-renderizar pills cuando se cambia de semana
+                renderCalendarAppointments(cachedAppointments);
+            }
+        });
+
+        document.getElementById('next-week').addEventListener('click', () => {
+            currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+            updateCalendarDisplay();
+            // Re-renderizar pills cuando se cambia de semana
+            renderCalendarAppointments(cachedAppointments);
+        });
+
+        // Calendar day selection
+        document.querySelectorAll('.calendar-day').forEach(day => {
+            day.addEventListener('click', (e) => {
+                if(e.currentTarget.disabled) return;
+                document.querySelectorAll('.calendar-day').forEach(d => {
+                    d.classList.remove('border-green-400', 'border-4', 'bg-green-50');
+                    d.classList.add('border-gray-200', 'border-2');
+                });
+                
+                e.currentTarget.classList.remove('border-gray-200', 'border-2');
+                e.currentTarget.classList.add('border-green-400', 'border-4', 'bg-green-50');
+            });
+        });
+
+        // Inicializar calendario
+        updateCalendarDisplay();
+
+        // Funciones para obtener y renderizar citas
+        async function fetchUserAppointments(cedula){
+            try{
+                const res = await fetch(`${API_BASE}/appointments/?cedula=${encodeURIComponent(cedula || '')}`, { credentials: 'include' });
+                const json = await res.json();
+                if(json.success) return json.appointments || [];
+            }catch(err){ console.error('Error fetch appointments', err); }
+            return [];
+        }
+
+        async function loadUserAppointments(){
+            const cedula = localStorage.getItem('user_cedula');
+            if(!cedula) return;
+            const list = await fetchUserAppointments(cedula);
+            cachedAppointments = list;
+            renderCalendarAppointments(list);
+        }
+
+        // cargar inicialmente
+        loadUserAppointments();
+
+        // Manejador de selección de horas
+        const horaButtons = document.querySelectorAll('.hora-btn');
+        const horaInput = document.getElementById('hora-select');
+        const fechaInput = document.querySelector('input[name="fecha"]');
+
+        // Establecer fecha mínima en el input
+        const todayStr = today.toISOString().split('T')[0];
+        fechaInput.setAttribute('min', todayStr);
+        fechaInput.value = todayStr;
+
+        horaButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                horaButtons.forEach(b => {
+                    b.classList.remove('border-4', 'border-green-600', 'bg-green-50', 'text-green-600', 'font-semibold');
+                    b.classList.add('border-2', 'border-gray-300');
+                });
+                btn.classList.remove('border-2', 'border-gray-300');
+                btn.classList.add('border-4', 'border-green-600', 'bg-green-50', 'text-green-600', 'font-semibold');
+                horaInput.value = btn.getAttribute('data-time');
+            });
+        });
+
+        // Helper para parsear respuesta robustamente
+        async function parseResponse(res){
+            const txt = await res.text();
+            try{ return JSON.parse(txt); }catch(e){ return { success: false, message: txt || 'Error en servidor' }; }
+        }
+
+        // Manejador del formulario agendar cita (envía al backend o modifica si appointment_id existe)
+        const formAgendar = document.getElementById('form-agendar');
+        if(formAgendar){
+            formAgendar.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const data = Object.fromEntries(new FormData(formAgendar).entries());
+                const cedula = localStorage.getItem('user_cedula');
+                if(!cedula){ alert('Usuario no identificado'); return; }
+                const appointmentId = document.getElementById('appointment-id').value;
+                if(appointmentId){
+                    // modificar cita existente
+                    const params = new URLSearchParams();
+                    params.append('appointment_id', appointmentId);
+                    params.append('fecha', data.fecha);
+                    params.append('hora', data.hora);
+                    try{
+                        const res = await fetch(`${API_BASE}/appointments/modify/`, { method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded'}, body: params.toString(), credentials: 'include' });
+                        const json = await parseResponse(res);
+                        alert(json.message || 'Cita actualizada');
+                        if(json.success){
+                            hideModal(modalAgendar);
+                            formAgendar.reset();
+                            document.getElementById('appointment-id').value = '';
+                            // refrescar calendario y lista
+                            await loadUserAppointments();
+                            if(!modalCitas.classList.contains('hidden')) citasBtn.click();
+                        }
+                    }catch(err){ console.error(err); alert('Error al actualizar cita'); }
+                } else {
+                    const params = new URLSearchParams();
+                    params.append('cedula', cedula);
+                    params.append('especialidad', data.especialidad);
+                    params.append('fecha', data.fecha);
+                    params.append('hora', data.hora);
+                    try{
+                        const res = await fetch(`${API_BASE}/appointments/`, { method: 'POST', headers: {'Content-Type':'application/x-www-form-urlencoded'}, body: params.toString(), credentials: 'include' });
+                        const json = await parseResponse(res);
+                        alert(json.message || 'Cita creada');
+                        if(json.success){
+                            hideModal(modalAgendar);
+                            formAgendar.reset();
+                            // refrescar calendario y lista
+                            await loadUserAppointments();
+                            if(!modalCitas.classList.contains('hidden')){
+                                citasBtn.click();
+                            }
+                        }
+                    }catch(err){ console.error(err); alert('Error al crear cita'); }
+                }
+            });
+        }
+
+        // Nueva cita desde modal citas abre el modal agendar
+        const nuevaCitaBtn = document.getElementById('nueva-cita-btn');
+        if(nuevaCitaBtn){
+            nuevaCitaBtn.addEventListener('click', () => {
+                hideModal(modalCitas);
+                showModal(modalAgendar);
+            });
+        }
+
+        // Histórico de citas
+        const modalHistorico = document.getElementById('modal-historico');
+        const historialBtn = document.getElementById('historial-btn');
+        const resumenActiv = document.getElementById('resumen-activ');
+        const historicoTable = document.getElementById('historico-table');
+        const histCount = document.getElementById('historico-count');
+        const exportPdfBtn = document.getElementById('export-pdf');
+
+        // Paginación del histórico
+        let historicoFullList = [];
+        let historicoPage = 1;
+        const historicoPerPage = 3;
+
+        if(historialBtn){
+            historialBtn.addEventListener('click', async () => {
+                await loadHistorico();
+                showModal(modalHistorico);
+            });
+        }
+
+        document.querySelectorAll('[data-close-historico]').forEach(el => el.addEventListener('click', () => hideModal(modalHistorico)));
+
+        async function loadHistorico(){
+            try{
+                const cedula = localStorage.getItem('user_cedula');
+                const res = await fetch(`${API_BASE}/appointments/?cedula=${encodeURIComponent(cedula || '')}`, { credentials: 'include' });
+                const json = await res.json();
+                const list = json.success ? json.appointments || [] : [];
+                // guardar lista completa y mostrar la primera página
+                historicoFullList = list;
+                historicoPage = 1;
+                renderHistoricoPage();
+            }catch(err){
+                console.error('Error cargando historico', err);
+                resumenActiv.innerHTML = '<div class="text-gray-600">Error cargando historial</div>';
+                historicoTable.innerHTML = '';
+                histCount.textContent = 'Mostrando 0 resultados';
+            }
+        }
+
+        function renderHistoricoContent(pageList){
+            // Calcular conteos basados en la lista completa
+            let asistidas = 0, pospuestas = 0, canceladas = 0;
+            historicoFullList.forEach(a => {
+                const estadoRaw = a.status || 'programada';
+                if(estadoRaw === 'asistida') asistidas++;
+                else if(estadoRaw === 'pospuesta' || estadoRaw === 'programada') pospuestas++;
+                else if(estadoRaw === 'cancelada') canceladas++;
+            });
+
+            const rows = pageList.map(a => {
+                const estadoRaw = a.status || 'programada';
+                const estadoLabel = estadoRaw === 'programada' ? 'Programada' : estadoRaw === 'asistida' ? 'Asistida' : estadoRaw === 'pospuesta' ? 'Pospuesta' : estadoRaw === 'cancelada' ? 'Cancelada' : estadoRaw;
+                const badgeClass = estadoRaw === 'asistida' ? 'bg-green-100 text-green-800' : estadoRaw === 'pospuesta' || estadoRaw === 'programada' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800';
+                const canReprogram = estadoRaw !== 'cancelada' && estadoRaw !== 'asistida';
+                return `<tr class="border-t"><td class="p-2">${escapeHtml(a.fecha)}</td><td class="p-2">${escapeHtml(getSpecialityLabel(a.especialidad))}</td><td class="p-2">${escapeHtml(a.doctor || '')}</td><td class="p-2"><span class="px-2 py-1 rounded ${badgeClass} text-xs">${estadoLabel}</span></td><td class="p-2"><a href="#" data-id="${a.id}" class="text-blue-600 hover:underline mr-3 ver-det">Ver Detalles</a>${canReprogram?'<a href="#" class="text-green-600 reprogram">Reprogramar</a>':''}</td></tr>`;
+            }).join('');
+
+            historicoTable.innerHTML = rows || '<tr><td class="p-4 text-gray-600" colspan="5">No hay citas.</td></tr>';
+            const total = historicoFullList.length;
+            histCount.textContent = `Mostrando ${pageList.length} de ${total} resultados`;
+
+            // Render resumen
+            resumenActiv.innerHTML = `
+                <div class="flex items-center justify-between bg-green-50 p-2 rounded"><div class="text-sm text-green-700">Asistidas</div><div class="font-semibold">${asistidas}</div></div>
+                <div class="flex items-center justify-between bg-blue-50 p-2 rounded"><div class="text-sm text-blue-700">Pospuestas</div><div class="font-semibold">${pospuestas}</div></div>
+                <div class="flex items-center justify-between bg-red-50 p-2 rounded"><div class="text-sm text-red-700">Canceladas</div><div class="font-semibold">${canceladas}</div></div>
+            `;
+
+            // Dibujar grafico simple en canvas (usar conteos totales)
+            drawPie([asistidas, pospuestas, canceladas]);
+
+            // Attach small handlers (Ver detalles / Reprogramar)
+            document.querySelectorAll('.ver-det').forEach(el => el.addEventListener('click', (e)=>{ e.preventDefault(); alert('Detalles: ' + e.currentTarget.getAttribute('data-id')); }));
+            // reprogram handlers could be attached here if implemented
+        }
+
+        function renderHistoricoPage(){
+            const total = historicoFullList.length;
+            const totalPages = Math.max(1, Math.ceil(total / historicoPerPage));
+            if(historicoPage > totalPages) historicoPage = totalPages;
+            if(historicoPage < 1) historicoPage = 1;
+            const start = (historicoPage - 1) * historicoPerPage;
+            const pageList = historicoFullList.slice(start, start + historicoPerPage);
+            renderHistoricoContent(pageList);
+
+            // actualizar estado de botones prev/next
+            const prevBtn = document.getElementById('hist-prev');
+            const nextBtn = document.getElementById('hist-next');
+            if(prevBtn) prevBtn.disabled = historicoPage <= 1;
+            if(nextBtn) nextBtn.disabled = historicoPage >= totalPages;
+        }
+
+        // handlers para paginación
+        const histPrevBtn = document.getElementById('hist-prev');
+        const histNextBtn = document.getElementById('hist-next');
+        if(histPrevBtn) histPrevBtn.addEventListener('click', () => { if(historicoPage>1){ historicoPage--; renderHistoricoPage(); } });
+        if(histNextBtn) histNextBtn.addEventListener('click', () => { const totalPages = Math.max(1, Math.ceil(historicoFullList.length / historicoPerPage)); if(historicoPage<totalPages){ historicoPage++; renderHistoricoPage(); } });
+
+        function drawPie(values){
+            const canvas = document.getElementById('hist-pie');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const total = values.reduce((s,n)=>s+n,0) || 1;
+            const colors = ['#34D399','#60A5FA','#FCA5A5'];
+            let start = 0;
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            for(let i=0;i<values.length;i++){
+                const slice = values[i]/total;
+                const end = start + slice*Math.PI*2;
+                ctx.beginPath();
+                ctx.moveTo(canvas.width/2, canvas.height/2);
+                ctx.arc(canvas.width/2, canvas.height/2, Math.min(canvas.width, canvas.height)/2 - 10, start, end);
+                ctx.closePath();
+                ctx.fillStyle = colors[i] || '#ccc';
+                ctx.fill();
+                start = end;
+            }
+        }
+
+        // Export PDF simple: imprimir la porción del modal
+        if(exportPdfBtn){
+            exportPdfBtn.addEventListener('click', () => {
+                // abrir nueva ventana con el contenido del modal para imprimir
+                const modalContent = modalHistorico.querySelector('.relative').outerHTML;
+                const w = window.open('', '_blank', 'width=900,height=700');
+                w.document.write('<html><head><title>Histórico de Citas</title><link rel="stylesheet" href="estilos/global.css"></head><body>');
+                w.document.write(modalContent);
+                w.document.write('</body></html>');
+                w.document.close();
+                w.focus();
+                setTimeout(()=>{ w.print(); }, 500);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+.carousel-indicator {
+    transition: all 0.3s ease;
+}
+
+.carousel-indicator.active {
+    width: 32px;
+    background-color: #16a34a;
+}
