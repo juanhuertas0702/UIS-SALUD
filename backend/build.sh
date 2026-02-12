@@ -8,3 +8,6 @@ pip install -r requirements.txt
 # 2. Correr migraciones y estáticos
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
+
+# 3. CREAR SUPERUSUARIO (Nuevo paso)
+python create_superuser.py
