@@ -11,6 +11,12 @@ import json
 
 def cors_response(data, status=200, request=None):
     response = JsonResponse(data, status=status)
+    # Lista de orígenes permitidos
+    allowed_origins = [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://uis-salud25.vercel.app',  # ← CAMBIA ESTO por tu dominio de Vercel
+    ]
     origin = None
     try:
         if request is not None:
