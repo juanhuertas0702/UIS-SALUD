@@ -375,7 +375,7 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(jsonData),
-                        credentials: 'include',
+
                     })
                     .then(r => r.json())
                     .then(json => {
@@ -435,7 +435,6 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(jsonData),
-                        credentials: 'include',
                     })
                     .then(r => r.json())
                     .then(json => {
