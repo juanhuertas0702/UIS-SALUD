@@ -362,7 +362,7 @@
             // Manejo de envío: envía datos al backend Django (SQLite) y muestra alertas
             const formLogin = document.getElementById('form-login');
             const formRegister = document.getElementById('form-register');
-            const API_BASE = 'https://uis-salud-backend.onrender.com';
+            const API_BASE = 'https://uis-salud-backend.onrender.com/api';
 
             if(formLogin){
                 formLogin.addEventListener('submit', (e) => {
@@ -371,7 +371,7 @@
                     const params = new URLSearchParams();
                     for(const pair of formData.entries()){ params.append(pair[0], pair[1]); }
 
-                    fetch(API_BASE + '/api/login/', {
+                    fetch(API_BASE + '/login/', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: params.toString(),
@@ -432,7 +432,7 @@
                     const params = new URLSearchParams();
                     for(const pair of formData.entries()){ params.append(pair[0], pair[1]); }
 
-                    fetch(API_BASE + '/api/register/', {
+                    fetch(API_BASE + '/register/', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: params.toString(),
