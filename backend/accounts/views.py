@@ -15,7 +15,7 @@ def cors_response(data, status=200, request=None):
     allowed_origins = [
         'http://localhost:5173',
         'http://localhost:3000',
-        'https://uis-salud25.vercel.app',  # ← CAMBIA ESTO por tu dominio de Vercel
+        'https://uis-salud25.vercel.app',
     ]
     origin = None
     try:
@@ -24,12 +24,12 @@ def cors_response(data, status=200, request=None):
     except Exception:
         origin = None
 
-    # If the request provided an Origin header, echo it back when allowing credentials.
-    # Browsers disallow Access-Control-Allow-Origin: * together with Allow-Credentials: true.
-    if origin:
+    # Validar que el origen esté en la lista permitida
+    if origin in allowed_origins:
         response["Access-Control-Allow-Origin"] = origin
     else:
-        response["Access-Control-Allow-Origin"] = "*"
+        # Si no está permitido, retornar sin CORS
+        response["Access-Control-Allow-Origin"] = "https://uis-salud25.vercel.app"
 
     response["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS, PUT, DELETE"
     response["Access-Control-Allow-Headers"] = "Content-Type, X-CSRFToken"
@@ -45,7 +45,11 @@ def register_view(request):
     if request.method != 'POST':
         return cors_response({'success': False, 'message': 'Método no permitido'}, status=405, request=request)
 
-    data = request.POST or request.POST
+    # Parse JSON from request body
+    try:
+        data = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        data = request.POST or {}
     nombre = data.get('nombre')
     apellidos = data.get('apellidos')
     cedula = data.get('cedula')
@@ -100,8 +104,14 @@ def login_view(request):
     if request.method != 'POST':
         return cors_response({'success': False, 'message': 'Método no permitido'}, status=405, request=request)
 
-    cedula = request.POST.get('cedula')
-    password = request.POST.get('password')
+    # Parse JSON from request body
+    try:
+        data = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        data = request.POST or {}
+
+    cedula = data.get('cedula')
+    password = data.get('password')
 
     if not (cedula and password):
         return cors_response({'success': False, 'message': 'Faltan credenciales'}, status=400, request=request)
@@ -172,7 +182,11 @@ def appointments_view(request):
 
     if request.method == 'POST':
         # Crear nueva cita; obtener paciente desde sesión si está autenticado
-        data = request.POST or request.POST
+        try:
+            data = json.loads(request.body) if request.body else {}
+        except json.JSONDecodeError:
+            data = request.POST or {}
+        
         especialidad = data.get('especialidad')
         fecha = data.get('fecha')
         hora = data.get('hora')
@@ -214,7 +228,11 @@ def modify_appointment(request):
     if request.method == 'OPTIONS':
         return cors_response({'ok': True}, request=request)
 
-    data = request.POST or request.POST
+    try:
+        data = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        data = request.POST or {}
+    
     appt_id = data.get('appointment_id') or data.get('id')
     fecha = data.get('fecha')
     hora = data.get('hora')
@@ -247,7 +265,11 @@ def cancel_appointment(request):
     if request.method == 'OPTIONS':
         return cors_response({'ok': True}, request=request)
 
-    data = request.POST or request.POST
+    try:
+        data = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        data = request.POST or {}
+    
     appt_id = data.get('id')
     if not appt_id:
         return cors_response({'success': False, 'message': 'No se envió id'}, status=400, request=request)
@@ -280,7 +302,11 @@ def update_appointment_status(request):
     if request.method == 'OPTIONS':
         return cors_response({'ok': True}, request=request)
 
-    data = request.POST or request.POST
+    try:
+        data = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        data = request.POST or {}
+    
     appt_id = data.get('id')
     new_status = data.get('status')
 
